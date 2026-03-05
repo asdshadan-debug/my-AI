@@ -1,11 +1,10 @@
-import express from "express";
-import cors from "cors";
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
-
-const PORT = 3000;
 
 app.get("/", (req,res)=>{
   res.send("Shadan AI server running");
@@ -13,30 +12,32 @@ app.get("/", (req,res)=>{
 
 app.post("/chat",(req,res)=>{
 
-  const message = req.body.message || "";
+  const message = req.body.message?.toLowerCase() || "";
+
   let reply = "";
 
-  const msg = message.toLowerCase();
-
-  if(msg.includes("name") || msg.includes("naam")){
-    reply = "Mera naam Shadan AI hai.";
-  }
-  else if(msg.includes("kisne banaya")){
-    reply = "Mujhe Shadan ne banaya hai.";
-  }
-  else if(msg.includes("hello") || msg.includes("hi")){
+  if(message.includes("hello")){
     reply = "Hello! Main Shadan AI hu.";
   }
+  else if(message.includes("name")){
+    reply = "Mera naam Shadan AI hai.";
+  }
+  else if(message.includes("kaise ho")){
+    reply = "Main theek hu. Tum kaise ho?";
+  }
+  else if(message.includes("kya")){
+    reply = "Thoda detail me pucho taaki main help kar saku.";
+  }
   else{
-    reply = "Aapne kaha: " + message;
+    reply = "Mujhe samajh nahi aaya. Thoda aur clear pucho.";
   }
 
-  res.json({
-    reply: reply
-  });
+  res.json({ reply });
 
 });
 
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT,()=>{
-  console.log("Shadan AI server running");
+  console.log("Server running on port "+PORT);
 });
