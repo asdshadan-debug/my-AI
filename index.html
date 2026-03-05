@@ -1,148 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Shadan AI Chat</title>
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display:flex; height:100vh; background:#eef2f7; color:#333; }
-
-  /* Sidebar */
-  #sidebar {
-    width:280px;
-    background:#fff;
-    border-right:1px solid #ddd;
-    display:flex; flex-direction:column;
-    padding-top:20px;
-  }
-  #sidebar h2 { text-align:center; margin-bottom:20px; font-size:24px; color:#4CAF50; }
-  #new-chat { margin:0 20px 15px 20px; padding:12px; background:#4CAF50; color:#fff; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:background 0.2s; }
-  #new-chat:hover { background:#45a049; }
-  #chat-list { flex:1; overflow-y:auto; padding:0 10px; }
-  .chat-item { padding:10px 12px; margin-bottom:8px; background:#f1f3f6; border-radius:8px; cursor:pointer; transition:background 0.2s; }
-  .chat-item:hover { background:#e2e6ea; }
-
-  /* Chat window */
-  #chat-window { flex:1; display:flex; flex-direction:column; position:relative; background:#f9faff; }
-  #messages { flex:1; padding:25px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:15px; }
-  .message { max-width:70%; padding:12px 15px; border-radius:15px; word-wrap:break-word; font-size:16px; line-height:1.4; box-shadow:0 2px 6px rgba(0,0,0,0.1); transition:all 0.2s; }
-  .user { align-self:flex-end; background:#4CAF50; color:#fff; border-bottom-right-radius:0; }
-  .ai { align-self:flex-start; background:#fff; color:#333; border-bottom-left-radius:0; }
-  .greeting { font-size:20px; font-weight:bold; text-align:center; margin-bottom:10px; padding:15px; border-radius:10px; background:#000; color:#fff; }
-
-  #input-box { display:flex; padding:12px 20px; border-top:1px solid #ddd; background:#fff; }
-  #msg { flex:1; padding:12px 15px; font-size:16px; border-radius:20px; border:1px solid #ccc; outline:none; transition:all 0.2s; }
-  #msg:focus { border-color:#4CAF50; }
-  #send { padding:12px 25px; margin-left:12px; background:#4CAF50; color:#fff; border:none; border-radius:20px; font-size:16px; cursor:pointer; transition:background 0.2s; }
-  #send:hover { background:#45a049; }
-
-  #messages::-webkit-scrollbar { width:8px; }
-  #messages::-webkit-scrollbar-track { background:#f1f1f1; border-radius:4px; }
-  #messages::-webkit-scrollbar-thumb { background:#bbb; border-radius:4px; }
-  #messages::-webkit-scrollbar-thumb:hover { background:#999; }
-</style>
+<title>Shadan AI</title>
 </head>
+
 <body>
 
-<!-- Sidebar -->
-<div id="sidebar">
-  <h2>Shadan AI</h2>
-  <button id="new-chat">New Chat</button>
-  <div id="chat-list"></div>
-</div>
+<h2>Shadan AI Chat</h2>
 
-<!-- Chat Window -->
-<div id="chat-window">
-  <div id="messages"></div>
-  <div id="input-box">
-    <input type="text" id="msg" placeholder="Type a message...">
-    <button id="send">Send</button>
-  </div>
-</div>
+<input id="msg" placeholder="message">
+<button onclick="send()">Send</button>
+
+<div id="chat"></div>
 
 <script>
-let chats = [];
-let currentChatIndex = -1;
 
-const chatList = document.getElementById("chat-list");
-const messagesDiv = document.getElementById("messages");
-const msgInput = document.getElementById("msg");
-const sendBtn = document.getElementById("send");
-const newChatBtn = document.getElementById("new-chat");
+async function send(){
 
-// 🔹 Function to start a new chat
-function startNewChat() {
-  chats.push([{ role:"Shadan AI", content:"Hello! I am Shadan AI. How can I help you?", greeting:true }]);
-  currentChatIndex = chats.length-1;
-  renderChatList();
-  renderMessages();
+let message = document.getElementById("msg").value;
+
+let res = await fetch("https://shadan-ai.onrender.com/chat",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+message:message
+})
+});
+
+let data = await res.json();
+
+document.getElementById("chat").innerHTML += "<p><b>You:</b> "+message+"</p>";
+document.getElementById("chat").innerHTML += "<p><b>AI:</b> "+data.reply+"</p>";
+
 }
-
-// 🔹 Automatic new chat on page load
-window.onload = () => { startNewChat(); };
-
-// 🔹 New Chat button click
-newChatBtn.onclick = () => { startNewChat(); };
-
-// Render chat list
-function renderChatList() {
-  chatList.innerHTML = "";
-  chats.forEach((chat,index)=>{
-    const div=document.createElement("div");
-    div.className="chat-item";
-    div.innerText=chat.length ? chat[0].content : `Chat ${index+1}`;
-    div.onclick=()=>{ currentChatIndex=index; renderMessages(); };
-    chatList.appendChild(div);
-  });
-}
-
-// Render messages
-function renderMessages() {
-  messagesDiv.innerHTML="";
-  if(currentChatIndex===-1) return;
-  chats[currentChatIndex].forEach(m=>{
-    const div=document.createElement("div");
-    div.className="message "+(m.role==="User"?"user":"ai");
-    if(m.greeting) div.classList.add("greeting");
-    div.innerText=m.content;
-    messagesDiv.appendChild(div);
-  });
-  messagesDiv.scrollTop=messagesDiv.scrollHeight;
-}
-
-// Send message
-async function sendMessage() {
-  const message = msgInput.value.trim();
-  if(!message||currentChatIndex===-1) return;
-  const chatId = currentChatIndex;
-  let chat=chats[currentChatIndex];
-
-  if(chat[0].greeting) chat.shift(); // remove greeting after first message
-  chat.push({ role:"User", content:message });
-  renderMessages();
-  msgInput.value="";
-
-  // 🔹 Backend API call
-  try {
-    const res = await fetch("http://localhost:3000/chat",{
-      method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ message, chatId })
-    });
-    const data = await res.json();
-    let reply = data.reply || "No reply!";
-    chat.push({ role:"Shadan AI", content:reply });
-    renderMessages();
-  } catch(e) {
-    chat.push({ role:"Shadan AI", content:"Error connecting to server!" });
-    renderMessages();
-  }
-}
-
-// Send on button or Enter
-sendBtn.addEventListener("click", sendMessage);
-msgInput.addEventListener("keypress",(e)=>{ if(e.key==="Enter") sendMessage(); });
 
 </script>
+
 </body>
 </html>
