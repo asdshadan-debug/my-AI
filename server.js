@@ -1,42 +1,64 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// test route
-app.get("/", (req, res) => {
+const PORT = process.env.PORT || 3000;
+
+// chat memory store
+let chats = {};
+
+app.get("/", (req,res)=>{
   res.send("Shadan AI server running");
 });
 
-// chat route
-app.post("/chat", (req, res) => {
+app.post("/chat", async (req,res)=>{
 
-  const message = req.body.message;
+  const {message,chatId} = req.body;
 
-  if(!message){
-    return res.json({reply:"Message missing"});
+  if(!chatId){
+    return res.json({reply:"chatId missing"});
   }
 
-  // simple AI reply
-  let reply = "Hello! Main Shadan AI hu.";
-
-  if(message.toLowerCase().includes("name")){
-    reply = "Mera naam Shadan AI hai.";
+  if(!chats[chatId]){
+    chats[chatId] = [];
   }
 
-  if(message.toLowerCase().includes("hello")){
-    reply = "Hello bhai! Kaise ho?";
+  chats[chatId].push({
+    role:"user",
+    content:message
+  });
+
+  let reply="";
+
+  const msgLower = message.toLowerCase();
+
+  if(msgLower.includes("naam")){
+    reply="Mera naam Shadan AI hai.";
   }
 
-  res.json({ reply });
+  else if(msgLower.includes("kisne rakha")){
+    reply="Mera naam mere creator ne rakha hai.";
+  }
+
+  else{
+    reply="Aapne kaha: "+message;
+  }
+
+  chats[chatId].push({
+    role:"assistant",
+    content:reply
+  });
+
+  res.json({reply});
 
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+app.listen(PORT,()=>{
+  console.log("Server running on port "+PORT);
 });
