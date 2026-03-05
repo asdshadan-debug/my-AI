@@ -3,52 +3,57 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// 🔹 In-memory chat storage
-let chatsStore = {}; // key: chatId, value: array of messages
+// memory chat storage
+let chats = {};
 
-// 🔹 Chat endpoint
+// chat endpoint
 app.post("/chat", async (req, res) => {
-  const { message, chatId } = req.body;
-  if (!chatId) return res.json({ reply: "Error: chatId missing!" });
 
-  // Initialize chat
-  if (!chatsStore[chatId]) {
-    chatsStore[chatId] = [
-      { role: "Shadan AI", content: "Hello! I am Shadan AI. How can I help you?" }
-    ];
+  const userMsg = req.body.message || "";
+  const chatId = req.body.chatId || "default";
+
+  if(!chats[chatId]) chats[chatId] = [];
+
+  chats[chatId].push({role:"user",content:userMsg});
+
+  let reply = "";
+
+  const msgLower = userMsg.toLowerCase();
+
+  if(
+    msgLower.includes("naam") ||
+    msgLower.includes("name") ||
+    msgLower.includes("who are you")
+  ){
+    reply = "Mera naam Shadan AI hai.";
+  }
+  else if(
+    msgLower.includes("kisne rakha") ||
+    msgLower.includes("who created you")
+  ){
+    reply = "Mujhe Shadan ne banaya hai.";
+  }
+  else{
+    reply = "Aapne kaha: " + userMsg;
   }
 
-  const chat = chatsStore[chatId];
-  chat.push({ role: "User", content: message });
+  chats[chatId].push({role:"assistant",content:reply});
 
-  // 🔹 Special replies
-  const msgLower = message.toLowerCase();
-  if (msgLower.includes("name") || msgLower.includes("tum kya ho") || msgLower.includes("who are you")) {
-    const reply = "Mera naam Shadan AI hai.";
-    chat.push({ role: "Shadan AI", content: reply });
-    return res.json({ reply });
-  }
-  if (msgLower.includes("kisne banaya") || msgLower.includes("banaya") || msgLower.includes("created you")) {
-    const reply = "Mujhe Shadan ne banaya hai.";
-    chat.push({ role: "Shadan AI", content: reply });
-    return res.json({ reply });
-  }
+  res.json({reply});
 
-  // 🔹 Dummy context-aware reply (Hinglish style)
-  let lastUser = message;
-  let reply = `Haan, samajh gaya: "${lastUser}". Aur batao, kya padhna hai?`; 
-  reply = reply.replace(/assistant|chatgpt/gi, "Shadan AI");
-
-  chat.push({ role: "Shadan AI", content: reply });
-  res.json({ reply });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.get("/", (req,res)=>{
+  res.send("Shadan AI server running");
+});
+
+app.listen(PORT, ()=>{
+  console.log("Server running on port " + PORT);
 });
